@@ -162,6 +162,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          notes="$PWD/release-notes/${{ steps.tag.outputs.name }}.md"
+          if [ ! -f "$notes" ]; then
+            echo "::error::Missing $notes. Write the release notes before drafting the release."
+            exit 1
+          fi
           cd dist
           ls -l
           sha256sum * > SHA256SUMS.txt
@@ -172,4 +177,4 @@ jobs:
             --target "${GITHUB_SHA}" \
             --draft \
             --title "Plugin-Checker ${tag#v}" \
-            --notes "Draft created by CI. Release notes follow."
+            --notes-file "$notes"
