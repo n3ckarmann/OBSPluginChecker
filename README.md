@@ -125,6 +125,10 @@ tools/harness.cpp        headless test
 tools/obs_plugin_checker.py  original command-line script
 ```
 
+## Disclaimer
+
+Use at your own risk. The Plugin Checker moves and replaces plugin files; it keeps backups and restore scripts, but please back up your OBS folder before updating or removing plugins. The software is provided without warranty; to the extent permitted by law, the authors are not liable for any damage, see sections 15 and 16 of the [GPL](LICENSE.md). This project is not affiliated with or endorsed by the OBS Project or the plugin authors.
+
 ## Support
 
 To make macOS open the packages without a warning, they have to be signed and notarized with an Apple Developer account, which costs 99 € a year. The Plugin Checker is free and a hobby project. If it helps you and you'd like to support my work, I'd be really happy, and maybe one day it covers signed packages: [ko-fi.com/n3ckarmann](https://ko-fi.com/n3ckarmann)
