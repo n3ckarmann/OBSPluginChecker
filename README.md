@@ -29,6 +29,18 @@ Die Tabelle zeigt pro Plugin eine Zeile mit Version, Update-Status, ob es benutz
 
 **Dateien…** zeigt alle Dateien eines Plugins: Plugin, Daten, mitgelieferte DLLs, Kopien neben `obs64.exe` und seinen Einstellungsordner. **Entfernen…** verschiebt sie nach dem Beenden von OBS in einen Backup-Ordner (`plugin_config/obs-plugin-checker/removed`), mit `restore.ps1`/`restore.sh` zum Zurückholen. Gelöscht wird nichts, DLLs, die andere Plugins brauchen, bleiben liegen.
 
+## macOS: Plugin wird blockiert
+
+Die macOS-Pakete sind nicht von Apple signiert und notarisiert (warum, steht unter [Unterstützen](#unterstützen)). Deshalb kann macOS sie beim ersten Öffnen blockieren, etwa mit der Meldung, dass Apple die Datei nicht auf Schadsoftware prüfen kann. So kommst du trotzdem ans Ziel:
+
+1. **Installer (`.pkg`):** Doppelklicke die Datei einmal und schließe die Meldung mit **Fertig**. Öffne dann **Systemeinstellungen → Datenschutz & Sicherheit**, scrolle nach unten zum Hinweis, dass die Datei blockiert wurde, und klicke auf **Trotzdem öffnen**. Nach der Bestätigung mit deinem Passwort oder Touch ID läuft der Installer normal durch. (Bis macOS 14 reicht auch Rechtsklick auf die Datei → **Öffnen** → **Öffnen**.)
+2. **ZIP (`.plugin`):** Entpacke es nach `~/Library/Application Support/obs-studio/plugins/`. Lädt OBS das Plugin danach nicht (es fehlt unter **Werkzeuge**), entferne im Terminal die Download-Markierung und starte OBS neu:
+   ```sh
+   xattr -dr com.apple.quarantine ~/Library/Application\ Support/obs-studio/plugins/obs-plugin-checker.plugin
+   ```
+
+Die Pakete werden ausschließlich von der GitHub-CI aus dem Code in diesem Repo gebaut. Die Prüfsummen stehen in `SHA256SUMS.txt` beim Release (`shasum -a 256 <Datei>` zum Vergleichen).
+
 ## Datenschutz und Sicherheit
 
 - Szenensammlungen werden nur nach Quellentypen durchsucht; Namen, Einstellungen und URLs werden weder angezeigt noch gespeichert oder geloggt. Von den Profilen werden nur die Encoder-Einträge in `basic.ini` gelesen; `service.json` (Stream-Key), `global.ini` und `user.ini` öffnet das Plugin nie.
@@ -108,6 +120,10 @@ data/                    Locale (de/en), known-plugins.json, manifest.json
 tools/harness.cpp        Headless-Test
 tools/obs_plugin_checker.py  ursprüngliches Kommandozeilen-Skript
 ```
+
+## Unterstützen
+
+Damit macOS die Pakete ohne Warnung öffnet, müssen sie mit einem Apple-Developer-Konto signiert und notarisiert werden. Das kostet 99 € im Jahr. Der Plugin-Checker ist kostenlos und ein Hobbyprojekt. Wenn er dir hilft und du meine Arbeit unterstützen möchtest, freue ich mich sehr darüber, und vielleicht reicht es irgendwann für signierte Pakete: [ko-fi.com/n3ckarmann](https://ko-fi.com/n3ckarmann)
 
 ## Lizenz
 
