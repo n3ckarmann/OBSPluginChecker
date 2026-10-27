@@ -167,6 +167,6 @@ jobs:
           gh release create "$tag" * \
             --repo "${GITHUB_REPOSITORY}" \
             --target "${GITHUB_SHA}" \
-            --draft --prerelease \
+            --draft \
             --title "Plugin-Checker ${tag#v}" \
             --notes "Draft created by CI. Release notes follow."
