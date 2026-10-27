@@ -38,7 +38,7 @@
     },
     "name": "obs-plugin-checker",
     "displayName": "Plugin Checker",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "author": "n3ckarmann",
     "website": "https://github.com/n3ckarmann/OBSPluginChecker",
     "email": ""
