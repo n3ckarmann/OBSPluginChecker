@@ -6,7 +6,7 @@ An OBS plugin that lists all installed third-party plugins and checks GitHub for
 
 Open it in OBS via **Tools → Plugin Checker**. If updates are available, the menu shows how many, e.g. "Plugin Checker (2 updates)".
 
-The interface is available in English and German; other OBS languages fall back to English.
+The interface follows the OBS language and is available in English, German, Spanish, French, Italian, Portuguese, Polish, Dutch, Japanese, Korean and Simplified Chinese; other languages fall back to English.
 
 ![Dialog](docs/dialog.png)
 
@@ -120,7 +120,7 @@ src/plugin-scanner.cpp   finding plugins: libobs modules + plugin folders, legac
 src/update-checker.cpp   GitHub queries, cache, comparison
 src/http-worker.cpp      libcurl on its own thread
 src/checker-dialog.cpp   window
-data/                    locale (de/en), known-plugins.json, manifest.json
+data/                    locale (11 languages), known-plugins.json, manifest.json
 tools/harness.cpp        headless test
 tools/obs_plugin_checker.py  original command-line script
 ```

@@ -6,7 +6,7 @@ Ein OBS-Plugin, das alle installierten Drittanbieter-Plugins auflistet und auf G
 
 Du öffnest es in OBS über **Werkzeuge → Plugin-Checker**. Gibt es Updates, steht die Anzahl direkt im Menü, z. B. „Plugin-Checker (2 Updates)“.
 
-Die Oberfläche gibt es auf Deutsch und Englisch; bei anderen OBS-Sprachen erscheint sie auf Englisch.
+Die Oberfläche folgt der OBS-Sprache und ist auf Englisch, Deutsch, Spanisch, Französisch, Italienisch, Portugiesisch, Polnisch, Niederländisch, Japanisch, Koreanisch und vereinfachtem Chinesisch verfügbar; bei anderen Sprachen erscheint sie auf Englisch.
 
 ![Dialog](docs/dialog.png)
 
@@ -120,7 +120,7 @@ src/plugin-scanner.cpp   Plugins finden: libobs-Module + Plugin-Ordner, Legacy-E
 src/update-checker.cpp   GitHub-Abfragen, Cache, Vergleich
 src/http-worker.cpp      libcurl auf eigenem Thread
 src/checker-dialog.cpp   Fenster
-data/                    Locale (de/en), known-plugins.json, manifest.json
+data/                    Locale (11 Sprachen), known-plugins.json, manifest.json
 tools/harness.cpp        Headless-Test
 tools/obs_plugin_checker.py  ursprüngliches Kommandozeilen-Skript
 ```
