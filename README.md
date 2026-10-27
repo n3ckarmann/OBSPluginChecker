@@ -1,130 +1,134 @@
-# Plugin-Checker für OBS Studio
+# Plugin Checker for OBS Studio
 
-Ein OBS-Plugin, das alle installierten Drittanbieter-Plugins auflistet und auf GitHub prüft, ob es neuere Versionen gibt. Gedacht vor allem für den Umstieg auf **OBS 33**: Dort hat sich das Laden von Plugins geändert, und Plugins an alten Orten laden nur noch übergangsweise (laut Ankündigung bis OBS 34; OBS selbst schreibt nur „in Zukunft“).
+English · [Deutsch](README.de.md)
 
-Du öffnest es in OBS über **Werkzeuge → Plugin-Checker**. Gibt es Updates, steht die Anzahl direkt im Menü, z. B. „Plugin-Checker (2 Updates)“.
+An OBS plugin that lists all installed third-party plugins and checks GitHub for newer versions. It is meant above all for the move to **OBS 33**: plugin loading has changed there, and plugins in old locations only keep loading for a transition period (until OBS 34 according to the announcement; OBS itself only says "in the future").
+
+Open it in OBS via **Tools → Plugin Checker**. If updates are available, the menu shows how many, e.g. "Plugin Checker (2 updates)".
+
+The interface is available in English and German; other OBS languages fall back to English.
 
 ![Dialog](docs/dialog.png)
 
-## Was es prüft
+## What it checks
 
 | | |
 |---|---|
-| **Version** | Installierte Version aus dem OBS-33-`manifest.json`, der `Info.plist` (macOS) oder der Datei-Versionsressource (Windows) |
-| **Neueste Version** | Das neueste GitHub-Release mit direktem Download für dein System (`.pkg` / `.exe` / `.deb`) |
-| **Legacy** | Plugins in alten Orten/Ordnerstrukturen, die OBS 34 nicht mehr lädt (siehe unten) |
-| **Doppelte Kopien** | z. B. eine neue `.plugin`-Version plus eine alte Kopie unter `/Library/…` |
-| **Nicht geladen** | Plugins, die auf der Platte liegen, die OBS aber nicht geladen hat oder die im Plugin-Manager deaktiviert sind |
-| **Gepflegt?** | Archivierte Repos und Releases, die älter sind als die aktuelle OBS-Hauptversion |
-| **OBS selbst** | Installierte gegen neueste OBS-Version |
-| **Genutzt?** | In welchen Szenensammlungen und Profilen die Quellen, Filter, Übergänge und Encoder des Plugins vorkommen. Plugins, deren Quellen nirgends benutzt werden, sind markiert |
-| **Fehlende Bibliotheken** | Plugins, die DLLs brauchen, die es nicht mehr gibt (z. B. nach einem OBS-Update), und deshalb nicht laden |
-| **Reste** | Datenordner ohne Plugin, z. B. von entfernten oder umbenannten Plugins |
+| **Version** | Installed version from the OBS 33 `manifest.json`, the `Info.plist` (macOS) or the file version resource (Windows) |
+| **Latest version** | The newest GitHub release with a direct download for your system (`.pkg` / `.exe` / `.deb`) |
+| **Legacy** | Plugins in old locations/folder layouts that OBS 34 will no longer load (see below) |
+| **Duplicate copies** | e.g. a new `.plugin` version plus an old copy under `/Library/…` |
+| **Not loaded** | Plugins that are on disk but were not loaded by OBS or are disabled in the plugin manager |
+| **Maintained?** | Archived repos and releases older than the current OBS major version |
+| **OBS itself** | Installed vs. latest OBS version |
+| **Used?** | Which scene collections and profiles use the plugin's sources, filters, transitions and encoders. Plugins whose sources are not used anywhere are marked |
+| **Missing libraries** | Plugins that need DLLs that no longer exist (e.g. after an OBS update) and therefore don't load |
+| **Leftovers** | Data folders without a plugin, e.g. from removed or renamed plugins |
 
-Die Tabelle zeigt pro Plugin eine Zeile mit Version, Update-Status, ob es benutzt wird, und die Spalte **Zukunft**: *neuer Ort*, *alter Ort* (läuft noch, wird aber irgendwann nicht mehr geladen), *lädt nicht* (z. B. fehlende DLLs) oder *Reste*. Alle Hinweise zum ausgewählten Plugin stehen darunter.
+The table shows one row per plugin with version, update status, whether it is used, and the **Future** column: *new location*, *legacy location* (still works, but will stop loading at some point), *does not load* (e.g. missing DLLs) or *leftovers*. All notes for the selected plugin are shown below the table.
 
-**Downloads** passen zum System: Unter Windows wird ein Installer angeboten, bei einer **portablen OBS** dagegen bevorzugt das ZIP, weil Installer nur in die normale OBS installieren. Downloads für andere CPUs (ARM, 32 Bit) werden übergangen. Unter dem Plugin steht, welche Datei geladen wird.
+**Downloads** match your system: on Windows an installer is offered, but for a **portable OBS** the ZIP is preferred, because installers only install into the regular OBS. Downloads for other CPUs (ARM, 32-bit) are skipped. The file that will be downloaded is shown below the plugin.
 
-**Aktualisieren…** (Windows) lädt das Release-ZIP von GitHub, prüft die Prüfsumme, die GitHub dafür angibt, und entpackt es in einen Arbeitsordner. Erkannt werden das alte flache Schema (`obs-plugins/64bit` + `data/obs-plugins/<Name>`), das ProgramData-Schema (`<Name>/bin/64bit` + `<Name>/data`) und das OBS-33-Schema (`<Name>/<Name>.dll` + `data`). Übernommen werden nur die DLLs des Plugins und sein data-Ordner, an den Ort, an dem das Plugin schon liegt. Vorher zeigt eine Vorschau jede Datei, die ersetzt wird oder neu dazukommt. ZIPs mit Pfaden außerhalb ihres Ordners, Zielpfade außerhalb der OBS-Ordner oder Dateien, die zu OBS oder anderen Plugins gehören, führen zum Abbruch. Getauscht wird erst nach dem Beenden von OBS; die alten Dateien und `restore.ps1` liegen in `plugin_config/obs-plugin-checker/updates`.
+**Update…** (Windows) downloads the release ZIP from GitHub, verifies the checksum GitHub provides for it and extracts it into a work folder. It recognizes the old flat layout (`obs-plugins/64bit` + `data/obs-plugins/<name>`), the ProgramData layout (`<name>/bin/64bit` + `<name>/data`) and the OBS 33 layout (`<name>/<name>.dll` + `data`). Only the plugin's DLLs and its data folder are taken over, into the place where the plugin already is. A preview first shows every file that will be replaced or added. ZIPs with paths outside their folder, target paths outside the OBS folders, or files that belong to OBS or other plugins abort the update. Files are only swapped after OBS exits; the old files and `restore.ps1` are kept in `plugin_config/obs-plugin-checker/updates`.
 
-**Dateien…** zeigt alle Dateien eines Plugins: Plugin, Daten, mitgelieferte DLLs, Kopien neben `obs64.exe` und seinen Einstellungsordner. **Entfernen…** verschiebt sie nach dem Beenden von OBS in einen Backup-Ordner (`plugin_config/obs-plugin-checker/removed`), mit `restore.ps1`/`restore.sh` zum Zurückholen. Gelöscht wird nichts, DLLs, die andere Plugins brauchen, bleiben liegen.
+**Files…** shows all files of a plugin: plugin, data, bundled DLLs, copies next to `obs64.exe` and its settings folder. **Remove…** moves them into a backup folder after OBS exits (`plugin_config/obs-plugin-checker/removed`), with `restore.ps1`/`restore.sh` to bring them back. Nothing is deleted, and DLLs that other plugins need stay where they are.
 
-## macOS: Plugin wird blockiert
+## macOS: plugin is blocked
 
-Die macOS-Pakete sind nicht von Apple signiert und notarisiert (warum, steht unter [Unterstützen](#unterstützen)). Deshalb kann macOS sie beim ersten Öffnen blockieren, etwa mit der Meldung, dass Apple die Datei nicht auf Schadsoftware prüfen kann. So kommst du trotzdem ans Ziel:
+The macOS packages are not signed and notarized by Apple (see [Support](#support) for why). So macOS may block them the first time you open them, for example with a message that Apple cannot check the file for malicious software. Here is how to get it installed anyway:
 
-1. **Installer (`.pkg`):** Doppelklicke die Datei einmal und schließe die Meldung mit **Fertig**. Öffne dann **Systemeinstellungen → Datenschutz & Sicherheit**, scrolle nach unten zum Hinweis, dass die Datei blockiert wurde, und klicke auf **Trotzdem öffnen**. Nach der Bestätigung mit deinem Passwort oder Touch ID läuft der Installer normal durch. (Bis macOS 14 reicht auch Rechtsklick auf die Datei → **Öffnen** → **Öffnen**.)
-2. **ZIP (`.plugin`):** Entpacke es nach `~/Library/Application Support/obs-studio/plugins/`. Lädt OBS das Plugin danach nicht (es fehlt unter **Werkzeuge**), entferne im Terminal die Download-Markierung und starte OBS neu:
+1. **Installer (`.pkg`):** Double-click the file once and close the message with **Done**. Then open **System Settings → Privacy & Security**, scroll down to the note that the file was blocked and click **Open Anyway**. After confirming with your password or Touch ID, the installer runs normally. (Up to macOS 14, right-click the file → **Open** → **Open** also works.)
+2. **ZIP (`.plugin`):** Extract it to `~/Library/Application Support/obs-studio/plugins/`. If OBS does not load the plugin afterwards (it is missing under **Tools**), remove the download marker in Terminal and restart OBS:
    ```sh
    xattr -dr com.apple.quarantine ~/Library/Application\ Support/obs-studio/plugins/obs-plugin-checker.plugin
    ```
 
-Die Pakete werden ausschließlich von der GitHub-CI aus dem Code in diesem Repo gebaut. Die Prüfsummen stehen in `SHA256SUMS.txt` beim Release (`shasum -a 256 <Datei>` zum Vergleichen).
+The packages are built only by GitHub CI from the code in this repository. The checksums are in `SHA256SUMS.txt` on the release (compare with `shasum -a 256 <file>`).
 
-## Datenschutz und Sicherheit
+## Privacy and security
 
-- Szenensammlungen werden nur nach Quellentypen durchsucht; Namen, Einstellungen und URLs werden weder angezeigt noch gespeichert oder geloggt. Von den Profilen werden nur die Encoder-Einträge in `basic.ini` gelesen; `service.json` (Stream-Key), `global.ini` und `user.ini` öffnet das Plugin nie.
-- Ins OBS-Log schreibt es nur seine Version und die Anzahl Plugins und Updates.
-- Netzwerk: nur HTTPS-Anfragen an `api.github.com`, ohne Anmeldung und ohne Tokens. GitHub erfährt dabei, welche Plugin-Repos abgefragt werden.
-- Links werden nur geöffnet, wenn es Web-Links sind; Downloads nur von `github.com`.
-- Pfade im Fenster zeigen den Benutzerordner als `~`, damit der Windows-Benutzername im Stream nicht zu sehen ist.
+- Scene collections are only searched for source types; names, settings and URLs are never shown, stored or logged. From profiles, only the encoder entries in `basic.ini` are read; the plugin never opens `service.json` (stream key), `global.ini` or `user.ini`.
+- It only writes its version and the number of plugins and updates to the OBS log.
+- Network: only HTTPS requests to `api.github.com`, without login and without tokens. GitHub learns which plugin repos are queried.
+- Links are only opened if they are web links; downloads only from `github.com`.
+- Paths in the window show the user folder as `~`, so your Windows user name is not visible on stream.
 
-Woher das Repo kommt, in dieser Reihenfolge:
-1. die eigene Zuordnung über „Repo zuordnen…“
-2. `urls.repository` aus dem `manifest.json` des Plugins (neu in OBS 33)
-3. die mitgelieferte Liste [`data/known-plugins.json`](data/known-plugins.json)
+Where the repo comes from, in this order:
+1. your own assignment via "Set repository…"
+2. `urls.repository` from the plugin's `manifest.json` (new in OBS 33)
+3. the bundled list [`data/known-plugins.json`](data/known-plugins.json)
 
-## OBS 33: Was sich bei Plugin-Orten ändert
+## OBS 33: what changes for plugin locations
 
-Quelle: [obsproject/obs-studio#13594](https://github.com/obsproject/obs-studio/pull/13594), [KB „Legacy Plugin Locations“](https://obsproject.com/kb/legacy-plugin-locations).
+Source: [obsproject/obs-studio#13594](https://github.com/obsproject/obs-studio/pull/13594), [KB "Legacy Plugin Locations"](https://obsproject.com/kb/legacy-plugin-locations).
 
-| System | Aktuell (OBS 33+) | Legacy (lädt nur bis OBS 34) |
+| System | Current (OBS 33+) | Legacy (loads only until OBS 34) |
 |---|---|---|
-| macOS | `~/Library/Application Support/obs-studio/plugins/<Name>.plugin` | `…/obs-studio/plugins/<Name>/bin/<Name>.so` (auch unter `/Library`) |
-| Windows | `C:\ProgramData\obs-studio\plugins\<Name>\<Name>.dll` + `data\` | `…\plugins\<Name>\bin\64bit\<Name>.dll`, `C:\Program Files\obs-studio\obs-plugins\64bit\` |
-| Linux | `~/.local/share/obs-studio/plugins/<Name>/<Name>.so`, `/usr/lib/obs-modules/plugins/` | `~/.config/obs-studio/plugins/<Name>/bin/64bit/`, `/usr/lib/obs-plugins/` |
+| macOS | `~/Library/Application Support/obs-studio/plugins/<name>.plugin` | `…/obs-studio/plugins/<name>/bin/<name>.so` (also under `/Library`) |
+| Windows | `C:\ProgramData\obs-studio\plugins\<name>\<name>.dll` + `data\` | `…\plugins\<name>\bin\64bit\<name>.dll`, `C:\Program Files\obs-studio\obs-plugins\64bit\` |
+| Linux | `~/.local/share/obs-studio/plugins/<name>/<name>.so`, `/usr/lib/obs-modules/plugins/` | `~/.config/obs-studio/plugins/<name>/bin/64bit/`, `/usr/lib/obs-plugins/` |
 
-Neue Orte haben Vorrang. Liegt ein Plugin doppelt vor, lädt OBS 33 die neue Kopie und blockiert die alte.
+New locations take precedence. If a plugin exists twice, OBS 33 loads the new copy and blocks the old one.
 
-## Bauen (macOS)
+## Building (macOS)
 
-Es reichen die Command Line Tools (`xcode-select --install`), Xcode und CMake sind nicht nötig. OBS muss unter `/Applications/OBS.app` installiert sein, oder du setzt `OBS_APP=/pfad/zu/OBS.app`.
+The Command Line Tools are enough (`xcode-select --install`); Xcode and CMake are not needed. OBS must be installed at `/Applications/OBS.app`, or set `OBS_APP=/path/to/OBS.app`.
 
 ```bash
 ./build-macos.sh install
 ```
 
-Das Skript lädt einmalig die OBS-31.1.1-Quellen (nur für die Header) und die Qt-6.8.3-Header aus `obsproject/obs-deps`, jeweils mit Prüfsumme. Das sind dieselben Versionen, die auch [obs-plugintemplate](https://github.com/obsproject/obs-plugintemplate) nutzt. Danach baut es `build/obs-plugin-checker.plugin`, signiert es ad hoc und kopiert es nach `~/Library/Application Support/obs-studio/plugins/`. Danach OBS neu starten.
+The script downloads the OBS 31.1.1 sources (headers only) and the Qt 6.8.3 headers from `obsproject/obs-deps` once, each with a checksum. These are the same versions [obs-plugintemplate](https://github.com/obsproject/obs-plugintemplate) uses. It then builds `build/obs-plugin-checker.plugin`, signs it ad hoc and copies it to `~/Library/Application Support/obs-studio/plugins/`. Restart OBS afterwards.
 
-**Kompatibilität:** Das Plugin wird gegen die libobs-API 31.1 gebaut und lädt damit in OBS 31.1, 32.x und 33. Funktionen, die es erst in OBS 33 gibt (`obs_get_module_version`, `obs_is_legacy_module`), werden zur Laufzeit gesucht und nur genutzt, wenn vorhanden. Das Plugin enthält ein OBS-33-`manifest.json`.
+**Compatibility:** The plugin is built against the libobs 31.1 API and therefore loads in OBS 31.1, 32.x and 33. Functions that only exist in OBS 33 (`obs_get_module_version`, `obs_is_legacy_module`) are looked up at runtime and only used if present. The plugin includes an OBS 33 `manifest.json`.
 
-Gebaut wird für die Architektur des installierten OBS.app (hier arm64). Für eine Universal-Version braucht es ein Universal-OBS zum Linken.
+It is built for the architecture of the installed OBS.app (here arm64). A universal build needs a universal OBS to link against.
 
-### Testen ohne OBS-Fenster
+### Testing without the OBS window
 
 ```bash
 ./build-macos.sh test
 ```
 
-Das startet libobs aus OBS.app, lädt das Plugin über `obs_open_module` (gleiche Versions- und Export-Prüfung wie OBS), führt Scan und GitHub-Abfrage aus und speichert ein Bild des Dialogs nach `build/dialog.png`. Mit `./build-macos.sh test force` wird der Cache übergangen.
+This starts libobs from OBS.app, loads the plugin via `obs_open_module` (same version and export checks as OBS), runs the scan and the GitHub query and saves an image of the dialog to `build/dialog.png`. `./build-macos.sh test force` bypasses the cache.
 
-## Getestet
+## Tested
 
-| | Ergebnis |
+| | Result |
 |---|---|
-| OBS 32.1.0 (macOS arm64, Qt 6.8.3) | lädt, Start-Check läuft, keine Fehler im Log |
-| OBS 33.0.0 (macOS arm64, Qt 6.11.1) | lädt, Start-Check läuft, Plugin-Manager zeigt Name/ID/Version aus `manifest.json` |
-| OBS 32.1.0 (macOS arm64), CI-Build Universal | lädt ohne Gatekeeper-Warnung; Versionen, Neueste, Status, Download-Datei und Download stimmen; zweite Stream-Deck-Kopie unter `/Library/…` korrekt erkannt |
-| OBS 32.0.2 (Ubuntu 24.04, Xvfb), CI-Build | Erkennung, Versionen und Legacy-Hinweis stimmen; nicht ladendes Plugin erkannt; Auswahl der `-legacy.deb` (GitHub-Antworten eingespielt); Entfernen und `restore.sh` |
-| Headless (`./build-macos.sh test`) | erkennt Update (3.0.2 → 3.2.1), Legacy-Ordner, doppelte Kopien, Repo aus `manifest.json`, GitHub-Limit mit Cache-Fallback |
+| OBS 32.1.0 (macOS arm64, Qt 6.8.3) | loads, startup check runs, no errors in the log |
+| OBS 33.0.0 (macOS arm64, Qt 6.11.1) | loads, startup check runs, plugin manager shows name/ID/version from `manifest.json` |
+| OBS 32.1.0 (macOS arm64), CI universal build | loads without a Gatekeeper warning; versions, latest, status, download file and download are correct; second Stream Deck copy under `/Library/…` detected correctly |
+| OBS 32.0.2 (Ubuntu 24.04, Xvfb), CI build | detection, versions and legacy note correct; plugin that doesn't load detected; `-legacy.deb` chosen (replayed GitHub responses); remove and `restore.sh` |
+| Headless (`./build-macos.sh test`) | detects update (3.0.2 → 3.2.1), legacy folder, duplicate copies, repo from `manifest.json`, GitHub limit with cache fallback |
 
-**Bekannter OBS-33-Fehler:** Hat ein Drittanbieter-Plugin ein `manifest.json`, meldet OBS 33.0.0 beim Beenden 6 zusätzliche „memory leaks“. Ohne Manifest sind es 0. Das passiert in OBS selbst und ist für den Betrieb harmlos.
+**Known OBS 33 bug:** If a third-party plugin has a `manifest.json`, OBS 33.0.0 reports 6 extra "memory leaks" on exit. Without a manifest it's 0. This happens in OBS itself and is harmless.
 
-## Hinweise
+## Notes
 
-- **GitHub-Limit:** Ohne Anmeldung erlaubt GitHub 60 API-Anfragen pro Stunde. Antworten werden 6 Stunden zwischengespeichert, „Erneut prüfen“ fragt neu an. Das Plugin meldet sich bewusst nicht an und liest keine Tokens aus der Umgebung.
-- **Netzwerk:** Das Plugin nutzt libcurl statt Qt Network, weil OBS auf macOS kein Qt-TLS-Backend mitliefert. Die Anfragen laufen in einem eigenen Thread.
-- **Downloads:** Downloads öffnen sich im Browser. Vor der Installation OBS beenden.
-- **Einstellungen:** Eigene Zuordnungen und Cache liegen im OBS-Ordner `plugin_config/obs-plugin-checker/`, also unter macOS in `~/Library/Application Support/obs-studio/`, unter Linux in `~/.config/obs-studio/` und unter Windows in `%APPDATA%\obs-studio\` (portable OBS: in ihrem eigenen `config`-Ordner).
-- **Builds:** Die CI baut bei jedem Pull Request Windows x64 (ZIP), macOS Universal (`.plugin` als ZIP und `.pkg`) und Ubuntu 24.04 x86_64 (`.tar.xz`). „Aktualisieren…“ gibt es bisher nur unter Windows; auf macOS und Linux öffnet „Download“ den passenden Installer bzw. das Paket im Browser.
+- **GitHub limit:** Without login GitHub allows 60 API requests per hour. Responses are cached for 6 hours; "Check again" queries again. The plugin deliberately does not log in and does not read tokens from the environment.
+- **Network:** The plugin uses libcurl instead of Qt Network, because OBS on macOS does not ship a Qt TLS backend. Requests run on their own thread.
+- **Downloads:** Downloads open in the browser. Quit OBS before installing.
+- **Settings:** Your own assignments and the cache are stored in the OBS folder `plugin_config/obs-plugin-checker/`, i.e. `~/Library/Application Support/obs-studio/` on macOS, `~/.config/obs-studio/` on Linux and `%APPDATA%\obs-studio\` on Windows (portable OBS: in its own `config` folder).
+- **Builds:** CI builds Windows x64 (ZIP), macOS universal (`.plugin` as ZIP and `.pkg`) and Ubuntu 24.04 x86_64 (`.tar.xz`) for every pull request. "Update…" is Windows-only so far; on macOS and Linux, "Download" opens the matching installer or package in the browser.
 
-## Projektstruktur
+## Project structure
 
 ```
-src/plugin-main.cpp      Modul-Einstieg, Menüeintrag, Start-Check
-src/plugin-scanner.cpp   Plugins finden: libobs-Module + Plugin-Ordner, Legacy-Erkennung, Versionen
-src/update-checker.cpp   GitHub-Abfragen, Cache, Vergleich
-src/http-worker.cpp      libcurl auf eigenem Thread
-src/checker-dialog.cpp   Fenster
-data/                    Locale (de/en), known-plugins.json, manifest.json
-tools/harness.cpp        Headless-Test
-tools/obs_plugin_checker.py  ursprüngliches Kommandozeilen-Skript
+src/plugin-main.cpp      module entry, menu item, startup check
+src/plugin-scanner.cpp   finding plugins: libobs modules + plugin folders, legacy detection, versions
+src/update-checker.cpp   GitHub queries, cache, comparison
+src/http-worker.cpp      libcurl on its own thread
+src/checker-dialog.cpp   window
+data/                    locale (de/en), known-plugins.json, manifest.json
+tools/harness.cpp        headless test
+tools/obs_plugin_checker.py  original command-line script
 ```
 
-## Unterstützen
+## Support
 
-Damit macOS die Pakete ohne Warnung öffnet, müssen sie mit einem Apple-Developer-Konto signiert und notarisiert werden. Das kostet 99 € im Jahr. Der Plugin-Checker ist kostenlos und ein Hobbyprojekt. Wenn er dir hilft und du meine Arbeit unterstützen möchtest, freue ich mich sehr darüber, und vielleicht reicht es irgendwann für signierte Pakete: [ko-fi.com/n3ckarmann](https://ko-fi.com/n3ckarmann)
+To make macOS open the packages without a warning, they have to be signed and notarized with an Apple Developer account, which costs 99 € a year. The Plugin Checker is free and a hobby project. If it helps you and you'd like to support my work, I'd be really happy, and maybe one day it covers signed packages: [ko-fi.com/n3ckarmann](https://ko-fi.com/n3ckarmann)
 
-## Lizenz
+## License
 
-GNU General Public License v3.0, siehe [LICENSE.md](LICENSE.md).
+GNU General Public License v3.0, see [LICENSE.md](LICENSE.md).
