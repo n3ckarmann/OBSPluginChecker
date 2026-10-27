@@ -99,6 +99,7 @@ jobs:
           echo "version=$(jq -r .version buildspec.json)" >> "$GITHUB_OUTPUT"
 
       - name: Install OBS and build tools
+        timeout-minutes: 10
         run: |
           curl -fsSL -o obs.deb https://github.com/obsproject/obs-studio/releases/download/32.0.2/OBS-Studio-32.0.2-Ubuntu-24.04-x86_64.deb
           sudo apt-get update
