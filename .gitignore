@@ -1,0 +1,9 @@
+build/
+.DS_Store
+build_x64/
+build_macos/
+build_x86_64/
+release/
+.deps/
+cmake/.CMakeBuildNumber
+__pycache__/

@@ -1,0 +1,16 @@
+{
+	"id": "obs-plugin-checker",
+	"name": "obs-plugin-checker",
+	"display_name": "Plugin Checker",
+	"version": "@VERSION@",
+	"os_arch": "@OS_ARCH@",
+	"description": "Checks installed third-party plugins for new versions on GitHub.",
+	"long_description": "Lists all installed third-party plugins, their versions and whether a newer release exists. Flags plugins in legacy locations that stop loading with OBS Studio 34.",
+	"urls": {
+		"repository": "https://github.com/n3ckarmann/OBSPluginChecker",
+		"website": "",
+		"support": "https://github.com/n3ckarmann/OBSPluginChecker/issues"
+	},
+	"has_banner": false,
+	"has_icon": false
+}
