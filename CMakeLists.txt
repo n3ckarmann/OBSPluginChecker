@@ -34,6 +34,8 @@ set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES AUTOMOC ON AUTOUIC ON AUT
 target_sources(
   ${CMAKE_PROJECT_NAME}
   PRIVATE
+    src/backup-store.cpp
+    src/backup-store.hpp
     src/checker-dialog.cpp
     src/checker-dialog.hpp
     src/http-worker.cpp

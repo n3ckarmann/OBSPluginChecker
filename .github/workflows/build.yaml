@@ -4,7 +4,9 @@ on:
   push:
     branches: [main]
     tags: ['v*']
+    paths-ignore: ['**.md', 'release-notes/**', 'docs/**']
   pull_request:
+    paths-ignore: ['**.md', 'release-notes/**', 'docs/**']
   workflow_dispatch:
     inputs:
       release:
@@ -15,9 +17,17 @@ on:
 permissions:
   contents: read
 
+# A newer push to the same branch or PR cancels the build that is still running.
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   windows:
     name: Windows x64
+    # The private dev repo only builds a main commit in its PR; the push to main
+    # would build the same code again on paid minutes.
+    if: github.event_name != 'push' || github.ref_type == 'tag' || !github.event.repository.private
     runs-on: windows-2022
     defaults:
       run:
@@ -80,6 +90,7 @@ jobs:
 
   macos:
     name: macOS Universal
+    if: github.event_name != 'push' || github.ref_type == 'tag' || !github.event.repository.private
     runs-on: macos-15
     env:
       CODESIGN_IDENT: "-"
@@ -118,6 +129,7 @@ jobs:
 
   linux:
     name: Ubuntu 24.04 x86_64
+    if: github.event_name != 'push' || github.ref_type == 'tag' || !github.event.repository.private
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0

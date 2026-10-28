@@ -1,4 +1,5 @@
 #include "checker-dialog.hpp"
+#include "backup-store.hpp"
 #include "update-checker.hpp"
 #include "plugin-remover.hpp"
 #include "plugin-updater.hpp"
@@ -12,6 +13,7 @@
 #include <QDesktopServices>
 #include <QDialogButtonBox>
 #include <QDir>
+#include <QEvent>
 #include <QFileInfo>
 #include <QHBoxLayout>
 #include <QHeaderView>
@@ -24,6 +26,7 @@
 #include <QPushButton>
 #include <QScrollArea>
 #include <QScrollBar>
+#include <QSet>
 #include <QSettings>
 #include <QSplitter>
 #include <QTableWidget>
@@ -208,9 +211,14 @@ CheckerDialog::CheckerDialog(QWidget *parent, UpdateChecker *checker) : QDialog(
 	table_->setWordWrap(false);
 	table_->setSortingEnabled(true);
 	table_->verticalHeader()->hide();
-	/* All columns can be dragged; widths start from the content (fitColumns) or the saved layout. */
+	/* All columns can be dragged; widths start from the content (fitColumns) or the saved layout. Together
+	 * they always fill the table's width: dragging one takes the room from the columns to its right. */
 	table_->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
 	table_->horizontalHeader()->setStretchLastSection(false);
+	table_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+	connect(table_->horizontalHeader(), &QHeaderView::sectionResized, this,
+		[this](int column, int oldSize, int newSize) { columnResized(column, oldSize, newSize); });
+	table_->viewport()->installEventFilter(this);
 
 	details_ = new QLabel(this);
 	details_->setTextFormat(Qt::RichText);
@@ -301,7 +309,10 @@ CheckerDialog::CheckerDialog(QWidget *parent, UpdateChecker *checker) : QDialog(
 	restoreLayout();
 	refresh();
 	/* the viewport has its real width only once the dialog is shown */
-	QTimer::singleShot(0, this, [this]() { fitColumns(); });
+	QTimer::singleShot(0, this, [this]() {
+		fitColumns();
+		fillWidth(0);
+	});
 }
 
 /* Window size, column widths and the divider are kept in the plugin's own config folder. */
@@ -354,6 +365,75 @@ void CheckerDialog::fitColumns()
 	if (free > table_->columnWidth(0))
 		table_->setColumnWidth(0, free);
 	columnsFitted_ = true;
+	fillWidth(0);
+}
+
+/* A dragged column takes its extra room from the columns to its right, starting with the last one, or
+ * gives freed room to the last column. The last column always ends at the right edge. */
+void CheckerDialog::columnResized(int column, int oldSize, int newSize)
+{
+	(void)oldSize;
+	int width = table_->viewport()->width();
+	if (fitting_ || width <= 0)
+		return;
+	auto header = table_->horizontalHeader();
+	const int last = kColumns - 1;
+	const int minSize = header->minimumSectionSize();
+	int delta = header->length() - width;
+	if (delta == 0)
+		return;
+	fitting_ = true;
+	if (column == last) {
+		header->resizeSection(last, std::max(minSize, newSize - delta));
+	} else if (delta < 0) {
+		header->resizeSection(last, header->sectionSize(last) - delta);
+	} else {
+		for (int c = last; c > column && delta > 0; c--) {
+			int take = std::min(delta, header->sectionSize(c) - minSize);
+			if (take > 0) {
+				header->resizeSection(c, header->sectionSize(c) - take);
+				delta -= take;
+			}
+		}
+		if (delta > 0)
+			header->resizeSection(column, newSize - delta);
+	}
+	fitting_ = false;
+}
+
+/* The table got wider or narrower: all columns grow or shrink in proportion, the last one takes the rest. */
+void CheckerDialog::fillWidth(int oldWidth)
+{
+	int width = table_->viewport()->width();
+	if (!columnsFitted_ || width <= 0)
+		return;
+	auto header = table_->horizontalHeader();
+	const int last = kColumns - 1;
+	const int minSize = header->minimumSectionSize();
+	fitting_ = true;
+	int total = oldWidth > 0 ? oldWidth : header->length();
+	if (total > 0 && total != width) {
+		for (int c = 0; c < last; c++)
+			header->resizeSection(c, std::max(minSize, int(qint64(header->sectionSize(c)) * width / total)));
+	}
+	int others = 0;
+	for (int c = 0; c < last; c++)
+		others += header->sectionSize(c);
+	header->resizeSection(last, std::max(minSize, width - others));
+	fitting_ = false;
+}
+
+bool CheckerDialog::eventFilter(QObject *watched, QEvent *event)
+{
+	if (watched == table_->viewport() && event->type() == QEvent::Resize) {
+		int width = table_->viewport()->width();
+		if (width != viewportWidth_) {
+			int old = viewportWidth_;
+			viewportWidth_ = width;
+			fillWidth(old);
+		}
+	}
+	return QDialog::eventFilter(watched, event);
 }
 
 const PluginEntry *CheckerDialog::selected() const
@@ -584,6 +664,10 @@ void CheckerDialog::showFiles()
 	remove->setEnabled(!e->files.isEmpty() && !e->self);
 	if (e->self)
 		remove->setToolTip(T("Files.RemoveSelf"));
+	/* the checker's own config folder holds the backups of all updates and removals */
+	QPushButton *clean = nullptr;
+	if (e->self)
+		clean = buttons->addButton(T("Backups.Button"), QDialogButtonBox::ActionRole);
 
 	auto layout = new QVBoxLayout(&dialog);
 	layout->addWidget(summary);
@@ -608,6 +692,120 @@ void CheckerDialog::showFiles()
 	connect(remove, &QPushButton::clicked, &dialog, [this, &entry, &dialog]() {
 		if (removePlugin(entry))
 			dialog.accept();
+	});
+	if (clean)
+		connect(clean, &QPushButton::clicked, &dialog, [this, &dialog]() {
+			cleanBackups();
+			dialog.accept();
+		});
+	dialog.exec();
+}
+
+static QString module_config_path(const char *name)
+{
+	char *path = obs_module_config_path(name);
+	QString dir = QDir::cleanPath(QFileInfo(QString::fromUtf8(path)).absoluteFilePath());
+	bfree(path);
+	return dir;
+}
+
+void CheckerDialog::cleanBackups()
+{
+	const QString updatesRoot = module_config_path("updates");
+	const QString removedRoot = module_config_path("removed");
+	const QList<BackupJob> jobs = list_backups(updatesRoot, removedRoot);
+
+	QDialog dialog(this);
+	dialog.setWindowTitle(T("Backups.Title"));
+	dialog.resize(760, 420);
+
+	auto list = new QListWidget(&dialog);
+	qint64 total = 0;
+	for (int i = 0; i < jobs.size(); i++) {
+		const BackupJob &job = jobs[i];
+		total += job.bytes;
+		QString text = QLocale().toString(job.when, QLocale::ShortFormat) + "   " + job.plugin + "   " +
+			       T(job.kind == "update" ? "Backups.Update" : "Backups.Remove") + "   (" +
+			       QLocale().formattedDataSize(job.bytes) + ")";
+		auto item = new QListWidgetItem(list);
+		item->setData(Qt::UserRole, i);
+		if (job.pending) {
+			item->setText(text + "   – " + T("Backups.Pending"));
+			item->setFlags(item->flags() & ~Qt::ItemIsUserCheckable & ~Qt::ItemIsEnabled);
+		} else {
+			item->setText(text);
+			item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
+			item->setCheckState(Qt::Unchecked);
+		}
+	}
+
+	auto summary = new QLabel(jobs.isEmpty() ? T("Backups.None")
+						 : T("Backups.Summary").arg(jobs.size()).arg(QLocale().formattedDataSize(total)),
+				  &dialog);
+	auto note = new QLabel(T("Backups.Note"), &dialog);
+	note->setWordWrap(true);
+	note->setStyleSheet("color: gray;");
+
+	auto buttons = new QDialogButtonBox(QDialogButtonBox::Close, &dialog);
+	auto older = buttons->addButton(T("Backups.SelectOlder"), QDialogButtonBox::ActionRole);
+	auto all = buttons->addButton(T("Backups.SelectAll"), QDialogButtonBox::ActionRole);
+	auto del = buttons->addButton(T("Backups.Delete"), QDialogButtonBox::DestructiveRole);
+	older->setEnabled(!jobs.isEmpty());
+	all->setEnabled(!jobs.isEmpty());
+
+	auto layout = new QVBoxLayout(&dialog);
+	layout->addWidget(summary);
+	layout->addWidget(list, 1);
+	layout->addWidget(note);
+	layout->addWidget(buttons);
+
+	auto checked = [list]() {
+		QList<int> rows;
+		for (int r = 0; r < list->count(); r++)
+			if (list->item(r)->checkState() == Qt::Checked && (list->item(r)->flags() & Qt::ItemIsEnabled))
+				rows << list->item(r)->data(Qt::UserRole).toInt();
+		return rows;
+	};
+	auto updateDelete = [del, checked]() { del->setEnabled(!checked().isEmpty()); };
+	updateDelete();
+
+	connect(list, &QListWidget::itemChanged, &dialog, updateDelete);
+	/* keeps the newest backup of each plugin, so the last change can still be undone */
+	connect(older, &QPushButton::clicked, &dialog, [list, &jobs]() {
+		QSet<QString> newest;
+		for (int r = 0; r < list->count(); r++) {
+			auto item = list->item(r);
+			const BackupJob &job = jobs[item->data(Qt::UserRole).toInt()];
+			if (!(item->flags() & Qt::ItemIsEnabled))
+				continue;
+			bool keep = !newest.contains(job.plugin);
+			newest.insert(job.plugin);
+			item->setCheckState(keep ? Qt::Unchecked : Qt::Checked);
+		}
+	});
+	connect(all, &QPushButton::clicked, &dialog, [list]() {
+		for (int r = 0; r < list->count(); r++)
+			if (list->item(r)->flags() & Qt::ItemIsEnabled)
+				list->item(r)->setCheckState(Qt::Checked);
+	});
+	connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+	connect(del, &QPushButton::clicked, &dialog, [&]() {
+		const QList<int> rows = checked();
+		qint64 bytes = 0;
+		for (int i : rows)
+			bytes += jobs[i].bytes;
+		if (QMessageBox::question(&dialog, T("Backups.Title"),
+					  T("Backups.Confirm").arg(rows.size()).arg(QLocale().formattedDataSize(bytes))) !=
+		    QMessageBox::Yes)
+			return;
+		int failed = 0;
+		for (int i : rows)
+			failed += !delete_backup(jobs[i], updatesRoot, removedRoot);
+		if (failed)
+			QMessageBox::warning(&dialog, T("Backups.Title"), T("Backups.Failed").arg(failed));
+		dialog.accept();
+		/* the file list of the checker's own entry shows the backups: scan again (GitHub answers are cached) */
+		checker_->start(false);
 	});
 	dialog.exec();
 }

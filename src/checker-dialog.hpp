@@ -24,6 +24,7 @@ private:
 	void mapRepo();
 	void showFiles();
 	bool removePlugin(const PluginEntry &e);
+	void cleanBackups();
 	void updatePlugin(const PluginEntry &e);
 	void confirmUpdate(const PluginEntry &e, const QByteArray &zip);
 	void updateDetails();
@@ -31,6 +32,9 @@ private:
 	void restoreLayout();
 	void saveLayout() const;
 	void fitColumns();
+	void columnResized(int column, int oldSize, int newSize);
+	void fillWidth(int oldWidth);
+	bool eventFilter(QObject *watched, QEvent *event) override;
 
 	UpdateChecker *checker_;
 	QLabel *header_;
@@ -39,6 +43,8 @@ private:
 	QTableWidget *table_;
 	QSplitter *splitter_;
 	bool columnsFitted_ = false;
+	bool fitting_ = false;
+	int viewportWidth_ = 0;
 	QPushButton *download_;
 	QPushButton *release_;
 	QPushButton *map_;
