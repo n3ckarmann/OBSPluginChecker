@@ -23,6 +23,7 @@ struct PluginEntry {
 	QStringList sharedFiles; // helper libraries other plugins need as well
 	QStringList missingLibraries; // imported DLLs that are not there, so the plugin cannot load
 	bool leftover = false;        // only a data folder is left, the plugin itself is gone
+	bool self = false;            // the Plugin Checker itself
 	QStringList types;            // source/filter/transition/output/encoder/service ids it provides
 	QHash<QString, int> usage;    // scene collection or "profile:<name>" -> number of uses
 

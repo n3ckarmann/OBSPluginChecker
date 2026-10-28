@@ -193,6 +193,7 @@ CheckerDialog::CheckerDialog(QWidget *parent, UpdateChecker *checker) : QDialog(
 
 	header_ = new QLabel(this);
 	header_->setTextFormat(Qt::RichText);
+	connect(header_, &QLabel::linkActivated, this, [](const QString &link) { open_web_link(link); });
 
 	table_ = new QTableWidget(0, kColumns, this);
 	table_->setHorizontalHeaderLabels({T("Column.Plugin"), T("Column.Installed"), T("Column.Latest"),
@@ -398,7 +399,10 @@ void CheckerDialog::refresh()
 		broken += future == Future::Broken;
 
 		QString tip = e.name + "\n" + display_path(e.location);
-		const QString cells[kColumns] = {e.displayName.isEmpty() ? e.name : e.displayName,
+		QString shown = e.displayName.isEmpty() ? e.name : e.displayName;
+		if (e.self)
+			shown += "  " + T("Self.Marker");
+		const QString cells[kColumns] = {shown,
 						 e.version.isEmpty() ? "–" : e.version,
 						 e.latest.isEmpty() ? "–" : e.latest,
 						 status_text(e.status),
@@ -416,6 +420,10 @@ void CheckerDialog::refresh()
 				}
 			} else if (c == 5) {
 				item->setForeground(future_color(future));
+			} else if (c == 0 && e.self) {
+				QFont f = item->font();
+				f.setItalic(true);
+				item->setFont(f);
 			}
 			table_->setItem(i, c, item);
 		}
@@ -433,6 +441,13 @@ void CheckerDialog::refresh()
 					 .arg(count_text("Count.Updates", updates))
 					 .arg(oldPlace)
 					 .arg(broken);
+	for (const PluginEntry &e : checker_->plugins) {
+		if (e.self && e.status == PluginEntry::Status::Update && !e.releaseUrl.isEmpty()) {
+			head += "<br><b style='color:#f0a020'>" + T("Header.SelfUpdate").arg(e.latest).toHtmlEscaped() +
+				"</b> &nbsp;<a href='" + e.releaseUrl.toHtmlEscaped() + "'>" +
+				T("Header.SelfUpdateLink").toHtmlEscaped() + "</a>";
+		}
+	}
 	header_->setText(head);
 
 	if (checker_->plugins.isEmpty() && !checker_->running())
@@ -498,7 +513,10 @@ void CheckerDialog::showFiles()
 	auto open = buttons->addButton(T("Button.Reveal"), QDialogButtonBox::ActionRole);
 	open->setEnabled(false);
 	auto remove = buttons->addButton(T("Files.Remove"), QDialogButtonBox::DestructiveRole);
-	remove->setEnabled(!e->files.isEmpty());
+	/* The checker cannot remove itself while it runs: use the uninstaller or delete the files by hand. */
+	remove->setEnabled(!e->files.isEmpty() && !e->self);
+	if (e->self)
+		remove->setToolTip(T("Files.RemoveSelf"));
 
 	auto layout = new QVBoxLayout(&dialog);
 	layout->addWidget(summary);

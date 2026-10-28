@@ -597,7 +597,7 @@ QList<PluginEntry> scan_plugins()
 
 	QHash<QString, QString> binaries;
 	for (const LoadedModule &m : loaded) {
-		if (m.name == PLUGIN_SELF || is_core(m))
+		if (is_core(m))
 			continue;
 		PluginEntry &e = entry_for(m.name);
 		binaries.insert(m.name, m.binary);
@@ -617,8 +617,6 @@ QList<PluginEntry> scan_plugins()
 	}
 
 	for (const Candidate &c : onDisk) {
-		if (c.name == PLUGIN_SELF)
-			continue;
 		bool known = index.contains(c.name);
 		PluginEntry &e = entry_for(c.name);
 		if (!known) {
@@ -632,6 +630,7 @@ QList<PluginEntry> scan_plugins()
 	}
 
 	for (PluginEntry &e : result) {
+		e.self = e.name == PLUGIN_SELF;
 		if (states.contains(e.name))
 			e.disabled = !states[e.name];
 

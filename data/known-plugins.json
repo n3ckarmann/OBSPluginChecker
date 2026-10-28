@@ -5,6 +5,7 @@
 	},
 	"advanced-scene-switcher": { "repo": "WarmUpTill/SceneSwitcher" },
 	"distroav": { "repo": "DistroAV/DistroAV" },
+	"obs-plugin-checker": { "repo": "n3ckarmann/OBSPluginChecker" },
 	"obs-ndi": { "repo": "DistroAV/DistroAV", "note": "Renamed.DistroAV" },
 	"obs-move-transition": { "repo": "exeldro/obs-move-transition" },
 	"move-transition": { "repo": "exeldro/obs-move-transition" },
