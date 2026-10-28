@@ -43,10 +43,40 @@ jobs:
       - name: Package
         run: .github/scripts/Package-Windows.ps1 -Target x64 -Configuration RelWithDebInfo
 
+      # Same layout as most OBS plugins: the ZIP's content goes straight into the OBS folder.
+      # The installer puts the same files into the OBS folder the user picks.
+      - name: Package ZIP and installer
+        env:
+          NAME: ${{ steps.spec.outputs.name }}
+          VERSION: ${{ steps.spec.outputs.version }}
+          BASE: ${{ steps.spec.outputs.name }}-${{ steps.spec.outputs.version }}-windows-x64
+        run: |
+          $src = "release/unpacked"
+          Expand-Archive "release/$env:BASE.zip" $src -Force
+          Remove-Item "release/$env:BASE.zip"
+
+          $stage = (New-Item -ItemType Directory "release/stage" -Force).FullName
+          New-Item -ItemType Directory "$stage/obs-plugins/64bit" -Force | Out-Null
+          New-Item -ItemType Directory "$stage/data/obs-plugins" -Force | Out-Null
+          Copy-Item "$src/$env:NAME/bin/64bit/*" "$stage/obs-plugins/64bit/"
+          Copy-Item "$src/$env:NAME/data" "$stage/data/obs-plugins/$env:NAME" -Recurse
+          Compress-Archive -Path "$stage/*" -DestinationPath "release/$env:BASE.zip" -CompressionLevel Optimal
+
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress | Out-Null }
+          $out = (Resolve-Path release).Path
+          & $iscc /Qp "/DVersion=$env:VERSION" "/DStage=$stage" "/DOutDir=$out" packaging/windows/installer.iss
+          if ($LASTEXITCODE -ne 0) { throw "ISCC failed" }
+
+          Get-ChildItem release -File | Select-Object Name, Length
+          [IO.Compression.ZipFile]::OpenRead((Resolve-Path "release/$env:BASE.zip").Path).Entries.FullName
+
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: ${{ steps.spec.outputs.name }}-${{ steps.spec.outputs.version }}-windows-x64-${{ github.sha }}
-          path: release/${{ steps.spec.outputs.name }}-${{ steps.spec.outputs.version }}-windows-x64.zip
+          path: |
+            release/${{ steps.spec.outputs.name }}-${{ steps.spec.outputs.version }}-windows-x64.zip
+            release/${{ steps.spec.outputs.name }}-${{ steps.spec.outputs.version }}-windows-x64-installer.exe
 
   macos:
     name: macOS Universal

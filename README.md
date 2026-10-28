@@ -10,6 +10,20 @@ The interface follows the OBS language and is available in English, German, Span
 
 ![Dialog](docs/dialog.png)
 
+## Installation
+
+Download the file for your system from the [releases](../../releases) and quit OBS before installing. The Plugin Checker needs OBS 31.1 or newer.
+
+**Windows, installer:** run `…-windows-x64-installer.exe` and pick your OBS folder (it suggests the installed OBS; for a portable OBS choose its folder). Uninstall it via Windows Settings → Apps. The installer is not signed, so Windows SmartScreen may say "Windows protected your PC": click **More info** → **Run anyway**.
+
+**Windows, ZIP:** copy the content of `…-windows-x64.zip` (the folders `obs-plugins` and `data`) into your OBS folder, e.g. `C:\Program Files\obs-studio\` or your portable OBS folder. Windows merges the folders; nothing of OBS is overwritten.
+
+**macOS:** open the `.pkg`, or extract the `.zip` into `~/Library/Application Support/obs-studio/plugins/`. If macOS blocks it, see [below](#macos-plugin-is-blocked).
+
+**Linux:** extract the `.tar.xz` into `~/.config/obs-studio/plugins/`.
+
+Then start OBS and open **Tools → Plugin Checker**.
+
 ## What it checks
 
 | | |
