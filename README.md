@@ -143,7 +143,7 @@ tools/obs_plugin_checker.py  original command-line script
 
 Full transparency: this project is **vibe-coded**. The maintainer describes what the plugin should do and tests everything in real OBS installations, while the code and translations are written by an AI coding assistant ([Claude Code](https://claude.com/claude-code)). Every change is still built and tested before a release, and the whole history is public in the commits.
 
-If you find something odd, please open an [issue](../../issues). Bug reports are very welcome.
+If you find something odd, please open an [issue](../../issues). Bug reports are very welcome. Every bug becomes an issue and is fixed in a new version, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Disclaimer
 

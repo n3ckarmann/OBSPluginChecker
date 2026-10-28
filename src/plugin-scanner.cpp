@@ -233,31 +233,10 @@ static QString bundle_version(const QString &bundlePath)
 #endif
 }
 
-static QString file_version(const QString &binary)
+/* Most plugins pass their version as a string literal to blog() ("loaded version %s"), so a single
+ * version-like string in the binary is taken as the version. Used where no version resource exists. */
+[[maybe_unused]] static QString version_from_strings(const QString &binary)
 {
-#ifdef _WIN32
-	std::wstring path = binary.toStdWString();
-	DWORD size = GetFileVersionInfoSizeW(path.c_str(), nullptr);
-	if (!size)
-		return {};
-	QByteArray buf(size, 0);
-	if (!GetFileVersionInfoW(path.c_str(), 0, size, buf.data()))
-		return {};
-	VS_FIXEDFILEINFO *info = nullptr;
-	UINT len = 0;
-	if (!VerQueryValueW(buf.data(), L"\\", (void **)&info, &len) || !info)
-		return {};
-	QString v = QString("%1.%2.%3")
-			    .arg(HIWORD(info->dwFileVersionMS))
-			    .arg(LOWORD(info->dwFileVersionMS))
-			    .arg(HIWORD(info->dwFileVersionLS));
-	return v == "0.0.0" ? QString() : v;
-#elif defined(__APPLE__)
-	(void)binary;
-	return {};
-#else
-	/* ELF has no version resource. Most plugins pass their version as a string literal to blog()
-	 * ("loaded version %s"), so a single version-like string in the binary is taken as the version. */
 	QFile f(binary);
 	if (f.size() > 64 * 1024 * 1024 || !f.open(QIODevice::ReadOnly))
 		return {};
@@ -277,6 +256,34 @@ static QString file_version(const QString &binary)
 		start = i + 1;
 	}
 	return found.size() == 1 ? *found.begin() : QString();
+}
+
+static QString file_version(const QString &binary)
+{
+#ifdef _WIN32
+	/* Some plugins (e.g. Source Profiler) ship without a version resource. */
+	std::wstring path = binary.toStdWString();
+	DWORD size = GetFileVersionInfoSizeW(path.c_str(), nullptr);
+	if (!size)
+		return version_from_strings(binary);
+	QByteArray buf(size, 0);
+	if (!GetFileVersionInfoW(path.c_str(), 0, size, buf.data()))
+		return version_from_strings(binary);
+	VS_FIXEDFILEINFO *info = nullptr;
+	UINT len = 0;
+	if (!VerQueryValueW(buf.data(), L"\\", (void **)&info, &len) || !info)
+		return version_from_strings(binary);
+	QString v = QString("%1.%2.%3")
+			    .arg(HIWORD(info->dwFileVersionMS))
+			    .arg(LOWORD(info->dwFileVersionMS))
+			    .arg(HIWORD(info->dwFileVersionLS));
+	return v == "0.0.0" ? version_from_strings(binary) : v;
+#elif defined(__APPLE__)
+	(void)binary;
+	return {};
+#else
+	/* ELF has no version resource. */
+	return version_from_strings(binary);
 #endif
 }
 

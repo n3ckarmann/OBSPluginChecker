@@ -299,17 +299,23 @@ const PluginEntry *CheckerDialog::selected() const
 	return i >= 0 && i < checker_->plugins.size() ? &checker_->plugins[i] : nullptr;
 }
 
+/* Also offered when the installed version is unknown: the user decides whether the latest release is newer. */
+static bool offers_update(const PluginEntry &e)
+{
+	return !e.downloadUrl.isEmpty() &&
+	       (e.status == PluginEntry::Status::Update || e.status == PluginEntry::Status::Check);
+}
+
 void CheckerDialog::updateButtons()
 {
 	auto e = selected();
-	download_->setEnabled(e && !e->downloadUrl.isEmpty() && e->status == PluginEntry::Status::Update);
+	download_->setEnabled(e && offers_update(*e));
 	release_->setEnabled(e && (!e->releaseUrl.isEmpty() || !e->repo.isEmpty() || !e->homepage.isEmpty()));
 	map_->setEnabled(e && !checker_->running());
 	reveal_->setEnabled(e && !e->location.isEmpty());
 	files_->setEnabled(e && !e->files.isEmpty());
 #ifdef _WIN32
-	bool canUpdate = e && e->status == PluginEntry::Status::Update && !e->downloadUrl.isEmpty() &&
-			 !e->downloadIsInstaller && !downloading_;
+	bool canUpdate = e && offers_update(*e) && !e->downloadIsInstaller && !downloading_;
 	update_->setEnabled(canUpdate);
 	update_->setToolTip(e && e->downloadIsInstaller ? T("Update.InstallerOnly") : T("Update.Tooltip"));
 #else
@@ -339,7 +345,7 @@ QStringList CheckerDialog::hintsFor(const PluginEntry &e) const
 	} else if (e.loaded || e.disabled) {
 		hints << T("Hint.NoTypes");
 	}
-	if (!e.downloadUrl.isEmpty() && e.status == PluginEntry::Status::Update && obs_is_portable()) {
+	if (offers_update(e) && obs_is_portable()) {
 #ifdef _WIN32
 		QString root = display_path(obs_install_root());
 #else
@@ -673,7 +679,7 @@ void CheckerDialog::confirmUpdate(const PluginEntry &e, const QByteArray &zip)
 		new QListWidgetItem(T("Update.Ignored") + "   " + QDir::toNativeSeparators(ignored), list);
 
 	auto summary = new QLabel(T("Update.Summary")
-					  .arg(name, e.version, e.latest)
+					  .arg(name, e.version.isEmpty() ? "?" : e.version, e.latest)
 					  .arg(replaced)
 					  .arg(plan.files.size() - replaced)
 					  .arg(plan.ignored.size()),

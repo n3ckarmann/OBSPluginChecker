@@ -143,7 +143,7 @@ tools/obs_plugin_checker.py  ursprüngliches Kommandozeilen-Skript
 
 Ganz offen: Dieses Projekt wird **gevibecodet**. Der Maintainer beschreibt, was das Plugin können soll, und testet alles in echten OBS-Installationen. Code und Übersetzungen schreibt ein KI-Coding-Assistent ([Claude Code](https://claude.com/claude-code)). Jede Änderung wird trotzdem vor einem Release gebaut und getestet, und die komplette Historie ist in den Commits öffentlich.
 
-Wenn dir etwas komisch vorkommt, mach gern ein [Issue](../../issues) auf. Fehlermeldungen sind sehr willkommen.
+Wenn dir etwas komisch vorkommt, mach gern ein [Issue](../../issues) auf. Fehlermeldungen sind sehr willkommen. Jeder Fehler wird ein Issue und in einer neuen Version behoben, siehe [CONTRIBUTING.md](CONTRIBUTING.md#deutsch).
 
 ## Haftungsausschluss
 
