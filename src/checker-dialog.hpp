@@ -4,6 +4,7 @@
 
 class QLabel;
 class QPushButton;
+class QSplitter;
 class QTableWidget;
 class UpdateChecker;
 struct PluginEntry;
@@ -15,6 +16,7 @@ public:
 	CheckerDialog(QWidget *parent, UpdateChecker *checker);
 
 	void refresh();
+	void done(int result) override;
 
 private:
 	const PluginEntry *selected() const;
@@ -26,12 +28,17 @@ private:
 	void confirmUpdate(const PluginEntry &e, const QByteArray &zip);
 	void updateDetails();
 	QStringList hintsFor(const PluginEntry &e) const;
+	void restoreLayout();
+	void saveLayout() const;
+	void fitColumns();
 
 	UpdateChecker *checker_;
 	QLabel *header_;
 	QLabel *footer_;
 	QLabel *details_;
 	QTableWidget *table_;
+	QSplitter *splitter_;
+	bool columnsFitted_ = false;
 	QPushButton *download_;
 	QPushButton *release_;
 	QPushButton *map_;

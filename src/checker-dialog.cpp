@@ -24,7 +24,10 @@
 #include <QPushButton>
 #include <QScrollArea>
 #include <QScrollBar>
+#include <QSettings>
+#include <QSplitter>
 #include <QTableWidget>
+#include <QTimer>
 #include <QUrl>
 #include <QVBoxLayout>
 
@@ -205,9 +208,9 @@ CheckerDialog::CheckerDialog(QWidget *parent, UpdateChecker *checker) : QDialog(
 	table_->setWordWrap(false);
 	table_->setSortingEnabled(true);
 	table_->verticalHeader()->hide();
-	table_->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
-	for (int c = 1; c < kColumns; c++)
-		table_->horizontalHeader()->setSectionResizeMode(c, QHeaderView::ResizeToContents);
+	/* All columns can be dragged; widths start from the content (fitColumns) or the saved layout. */
+	table_->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
+	table_->horizontalHeader()->setStretchLastSection(false);
 
 	details_ = new QLabel(this);
 	details_->setTextFormat(Qt::RichText);
@@ -221,8 +224,17 @@ CheckerDialog::CheckerDialog(QWidget *parent, UpdateChecker *checker) : QDialog(
 	detailsScroll->setWidgetResizable(true);
 	detailsScroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 	detailsScroll->setFrameShape(QFrame::StyledPanel);
-	detailsScroll->setMinimumHeight(110);
-	detailsScroll->setMaximumHeight(180);
+	detailsScroll->setMinimumHeight(60);
+
+	/* Divider between list and details, so the list can take as much room as wanted. */
+	splitter_ = new QSplitter(Qt::Vertical, this);
+	splitter_->addWidget(table_);
+	splitter_->addWidget(detailsScroll);
+	splitter_->setStretchFactor(0, 1);
+	splitter_->setStretchFactor(1, 0);
+	splitter_->setCollapsible(0, false);
+	splitter_->setCollapsible(1, false);
+	splitter_->setSizes({440, 130});
 
 	download_ = new QPushButton(T("Button.Download"), this);
 	release_ = new QPushButton(T("Button.Release"), this);
@@ -250,8 +262,7 @@ CheckerDialog::CheckerDialog(QWidget *parent, UpdateChecker *checker) : QDialog(
 
 	auto layout = new QVBoxLayout(this);
 	layout->addWidget(header_);
-	layout->addWidget(table_, 1);
-	layout->addWidget(detailsScroll);
+	layout->addWidget(splitter_, 1);
 	layout->addLayout(buttons);
 	layout->addWidget(footer_);
 
@@ -287,7 +298,62 @@ CheckerDialog::CheckerDialog(QWidget *parent, UpdateChecker *checker) : QDialog(
 	});
 	connect(recheck_, &QPushButton::clicked, this, [this]() { checker_->start(true); });
 
+	restoreLayout();
 	refresh();
+	/* the viewport has its real width only once the dialog is shown */
+	QTimer::singleShot(0, this, [this]() { fitColumns(); });
+}
+
+/* Window size, column widths and the divider are kept in the plugin's own config folder. */
+static QString layout_file()
+{
+	char *path = obs_module_config_path("dialog.ini");
+	QString file = QString::fromUtf8(path);
+	bfree(path);
+	return file;
+}
+
+void CheckerDialog::restoreLayout()
+{
+	QSettings settings(layout_file(), QSettings::IniFormat);
+	if (QByteArray geometry = settings.value("geometry").toByteArray(); !geometry.isEmpty())
+		restoreGeometry(geometry);
+	if (QByteArray split = settings.value("splitter").toByteArray(); !split.isEmpty())
+		splitter_->restoreState(split);
+	QByteArray columns = settings.value("columns").toByteArray();
+	if (!columns.isEmpty() && table_->horizontalHeader()->restoreState(columns))
+		columnsFitted_ = true;
+}
+
+void CheckerDialog::saveLayout() const
+{
+	QDir().mkpath(QFileInfo(layout_file()).absolutePath());
+	QSettings settings(layout_file(), QSettings::IniFormat);
+	settings.setValue("geometry", saveGeometry());
+	settings.setValue("splitter", splitter_->saveState());
+	if (columnsFitted_)
+		settings.setValue("columns", table_->horizontalHeader()->saveState());
+}
+
+void CheckerDialog::done(int result)
+{
+	saveLayout();
+	QDialog::done(result);
+}
+
+/* First start without a saved layout: columns fit their content, the plugin name gets the rest. */
+void CheckerDialog::fitColumns()
+{
+	if (columnsFitted_ || !isVisible() || table_->rowCount() == 0 || checker_->running())
+		return;
+	table_->resizeColumnsToContents();
+	int others = 0;
+	for (int c = 1; c < kColumns; c++)
+		others += table_->columnWidth(c);
+	int free = table_->viewport()->width() - others;
+	if (free > table_->columnWidth(0))
+		table_->setColumnWidth(0, free);
+	columnsFitted_ = true;
 }
 
 const PluginEntry *CheckerDialog::selected() const
@@ -430,6 +496,7 @@ void CheckerDialog::refresh()
 		table_->item(i, 0)->setData(Qt::UserRole, i);
 	}
 	table_->setSortingEnabled(true);
+	fitColumns();
 	for (int row = 0; row < table_->rowCount(); row++)
 		if (auto item = table_->item(row, 0);
 		    item && checker_->plugins[item->data(Qt::UserRole).toInt()].name == current)
