@@ -139,6 +139,12 @@ tools/harness.cpp        Headless-Test
 tools/obs_plugin_checker.py  ursprüngliches Kommandozeilen-Skript
 ```
 
+## Wie dieses Projekt entsteht 🤖
+
+Ganz offen: Dieses Projekt wird **gevibecodet**. Der Maintainer beschreibt, was das Plugin können soll, und testet alles in echten OBS-Installationen. Code und Übersetzungen schreibt ein KI-Coding-Assistent ([Claude Code](https://claude.com/claude-code)). Jede Änderung wird trotzdem vor einem Release gebaut und getestet, und die komplette Historie ist in den Commits öffentlich.
+
+Wenn dir etwas komisch vorkommt, mach gern ein [Issue](../../issues) auf. Fehlermeldungen sind sehr willkommen.
+
 ## Haftungsausschluss
 
 Nutzung auf eigene Gefahr. Der Plugin-Checker verschiebt und ersetzt Plugin-Dateien; er legt zwar Backups und Wiederherstellungs-Skripte an, trotzdem solltest du vor Updates oder dem Entfernen von Plugins deinen OBS-Ordner sichern. Die Software wird ohne Gewährleistung bereitgestellt; soweit gesetzlich zulässig, haften die Autoren nicht für Schäden, siehe Abschnitte 15 und 16 der [GPL](LICENSE.md). Dieses Projekt steht in keiner Verbindung zum OBS Project oder zu den Plugin-Autoren und wird von ihnen nicht unterstützt.
