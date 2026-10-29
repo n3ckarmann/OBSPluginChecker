@@ -7,9 +7,9 @@
 	"description": "Checks installed third-party plugins for new versions on GitHub.",
 	"long_description": "Lists all installed third-party plugins, their versions and whether a newer release exists. Flags plugins in legacy locations that stop loading with OBS Studio 34.",
 	"urls": {
-		"repository": "https://github.com/n3ckarmann/OBSPluginChecker",
+		"repository": "https://github.com/n3ckarmann/PluginChecker-for-OBS-Studio",
 		"website": "",
-		"support": "https://github.com/n3ckarmann/OBSPluginChecker/issues"
+		"support": "https://github.com/n3ckarmann/PluginChecker-for-OBS-Studio/issues"
 	},
 	"has_banner": false,
 	"has_icon": false
